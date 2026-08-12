@@ -6,6 +6,7 @@ import {
   type BrowserContextOptions,
 } from "playwright-core";
 import { schedule } from "./hostGate.js";
+import { ssrfGuard } from "./ssrfGuard.js";
 import { USER_AGENT } from "./constants.js";
 
 /**
@@ -91,6 +92,7 @@ class BrowserPool {
   }
 
   async goto(page: Page, url: string, options?: Parameters<Page["goto"]>[1]) {
+    await ssrfGuard.assertPublicUrl(url);
     const parsed = new URL(url);
     return schedule(parsed.hostname, () => page.goto(url, options));
   }

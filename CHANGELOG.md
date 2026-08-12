@@ -5,6 +5,17 @@ All notable changes to `mcp-web-agent` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-08-12
+
+### Security
+- **SSRF protection (`src/ssrfGuard.ts`)**: Added `assertPublicUrl()` guard that blocks fetches to loopback (`127.x`, `::1`), private RFC-1918 ranges (`10.x`, `172.16–31.x`, `192.168.x`), link-local/cloud metadata addresses (`169.254.x.x`), multicast/reserved ranges, and `localhost`. The guard is called in three places so no fetch path is unprotected:
+  - `tieredFetch.ts` — covers `web_scrape`, `web_check`, `web_diff`, and the static-HTTP tier of `web_crawl`.
+  - `browserPool.goto()` — covers `web_interact`, which calls the browser directly without going through `tieredFetch`.
+  - `crawl.ts` link enqueueing — drops discovered links pointing at private addresses before they are queued, rather than generating blocked result entries.
+- `ignoreRobots: true` no longer has any effect on SSRF protection; robots.txt opt-out and internal-network blocking are independent concerns.
+
+> **Note:** DNS rebinding is not fully mitigated — a hostname that resolves to a public IP at check-time can still resolve to a private IP at TCP-connect-time (inside `fetch`/Playwright's own resolver). This patch closes the common/naive case. Full rebinding protection (IP pinning via a custom dispatcher or local proxy) is a follow-up for high-trust-boundary deployments.
+
 ## [1.0.0] - 2026-08-12
 
 ### Added

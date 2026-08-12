@@ -1,6 +1,7 @@
 import { browserPool } from "./browserPool.js";
 import { isThinContent } from "./extract.js";
 import { checkRobots, schedule } from "./hostGate.js";
+import { ssrfGuard } from "./ssrfGuard.js";
 import type { BrowserContextOptions } from "playwright-core";
 import { USER_AGENT } from "./constants.js";
 
@@ -34,6 +35,8 @@ export async function tieredFetch(
 ): Promise<TieredFetchResult> {
   const timeoutMs = opts?.timeoutMs ?? 15_000;
   const parsedUrl = new URL(url);
+
+  await ssrfGuard.assertPublicUrl(url);
 
   if (!opts?.ignoreRobots) {
     const robotsCheck = await checkRobots(url);

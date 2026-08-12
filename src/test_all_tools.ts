@@ -7,6 +7,7 @@ import { interact } from "./tools/interact.js";
 import { deleteSession, loadSession, saveSession } from "./sessions.js";
 import { checkRobots, SimpleRobotsParser } from "./hostGate.js";
 import { browserPool } from "./browserPool.js";
+import { ssrfGuard } from "./ssrfGuard.js";
 
 function banner(title: string) {
   console.log(`\n============================================================`);
@@ -24,6 +25,9 @@ function assert(condition: boolean, msg: string) {
 
 // In-memory Mock Fetch to bypass sandboxed network limitations during automated tests
 const originalFetch = globalThis.fetch;
+
+// Store the original ssrfGuard for cleanup
+const originalAssertPublicUrl = ssrfGuard.assertPublicUrl;
 
 function setupMockFetch() {
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -67,6 +71,14 @@ function setupMockFetch() {
 
 async function runTests() {
   setupMockFetch();
+
+  // Bypass SSRF DNS check for the mock hostname used in tests.
+  // The real assertPublicUrl is restored in the finally block.
+  ssrfGuard.assertPublicUrl = async (urlStr: string) => {
+    if (new URL(urlStr).hostname === "test-server.local") return;
+    return originalAssertPublicUrl(urlStr);
+  };
+
   const baseUrl = `http://test-server.local`;
 
   try {
@@ -241,6 +253,7 @@ async function runTests() {
     banner("ALL TESTS COMPLETED SUCCESSFULLY! 🎉");
   } finally {
     globalThis.fetch = originalFetch;
+    ssrfGuard.assertPublicUrl = originalAssertPublicUrl;
     await browserPool.shutdown();
   }
 }
@@ -248,6 +261,7 @@ async function runTests() {
 runTests().catch(async (err) => {
   console.error("❌ Test suite failed:", err);
   globalThis.fetch = originalFetch;
+  ssrfGuard.assertPublicUrl = originalAssertPublicUrl;
   await browserPool.shutdown();
   process.exit(1);
 });
