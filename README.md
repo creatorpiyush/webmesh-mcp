@@ -199,6 +199,24 @@ runtime data is stored.
 
 ---
 
+## Security
+
+### SSRF protection
+
+All outbound fetches — static HTTP, browser navigation, and crawl link-following — are validated against a blocklist before any network connection is made. Requests to the following are rejected:
+
+- Loopback addresses (`127.x.x.x`, `::1`, `localhost`)
+- Private RFC-1918 ranges (`10.x`, `172.16–31.x`, `192.168.x`)
+- Link-local and cloud metadata addresses (`169.254.x.x`, including the AWS/GCP/Azure instance metadata endpoint)
+- Multicast and reserved ranges (`224.x` and above)
+- Non-HTTP/HTTPS schemes
+
+This matters because `web_crawl` follows links automatically, and scraped page content can contain prompt-injection attempts that try to redirect the next fetch to an internal address. The guard is applied at every fetch entry point so `ignoreRobots: true` does not bypass it.
+
+**DNS rebinding caveat:** The guard resolves hostnames and checks the returned IPs, but the actual TCP connection is made moments later by `fetch`/Playwright using their own DNS resolution. A determined attacker with control of a DNS record could exploit this window. This is the known residual risk; full mitigation requires IP pinning at the HTTP-client level and is a planned follow-up.
+
+---
+
 ## Architecture
 
 ```
@@ -211,6 +229,7 @@ index.ts (MCP server, stdio transport)
 ├── tools/crawlGetPage.ts  — web_crawl_get_page
 ├── tieredFetch.ts         — static HTTP → browser escalation
 ├── browserPool.ts         — singleton Chromium process (playwright-core)
+├── ssrfGuard.ts           — SSRF protection (blocks private/reserved addresses)
 ├── extract.ts             — HTML → clean markdown / plain text / schema JSON
 ├── hostGate.ts            — robots.txt parser + per-host rate-limiting queue
 ├── sessions.ts            — disk-backed storageState persistence

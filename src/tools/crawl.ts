@@ -2,6 +2,7 @@ import * as cheerio from "cheerio";
 import { tieredFetch } from "../tieredFetch.js";
 import { htmlToCleanMarkdown } from "../extract.js";
 import { putCrawledPage } from "../cache.js";
+import { ssrfGuard } from "../ssrfGuard.js";
 
 export interface CrawlInput {
   startUrl: string;
@@ -156,6 +157,12 @@ export async function crawl(input: CrawlInput): Promise<CrawlOutput> {
     if (current.depth < maxDepth) {
       for (const link of uniqueLinks) {
         if (visited.has(link)) continue;
+
+        try {
+          await ssrfGuard.assertPublicUrl(link);
+        } catch {
+          continue; // private/reserved address — drop silently
+        }
 
         try {
           const linkHost = new URL(link).hostname;
