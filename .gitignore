@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.mcp-web-agent/
+.cache/
+.sessions/
+*.log
+*.tgz

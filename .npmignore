@@ -1,0 +1,21 @@
+# Source — consumers get dist/ only
+src/
+*.ts
+!dist/
+
+# Runtime data (never publish user data)
+.mcp-web-agent/
+.sessions/
+.cache/
+
+# Agent config
+.agents/
+
+# Dev & documentation internals
+enhancement.md
+*.log
+*.tmp
+*.map
+
+# Node
+node_modules/
