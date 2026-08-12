@@ -1,6 +1,6 @@
 node_modules/
 dist/
-.mcp-web-agent/
+.webmesh-mcp/
 .cache/
 .sessions/
 *.log

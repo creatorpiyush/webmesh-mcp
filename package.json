@@ -1,16 +1,16 @@
 {
-  "name": "mcp-web-agent",
+  "name": "webmesh-mcp",
   "version": "1.0.1",
   "description": "Token-economical web browsing, scraping, and crawling MCP server. Tiered fetching (static → browser), robots.txt compliance, session persistence, and BFS crawling.",
   "author": "Piyush Anand",
   "license": "MIT",
-  "homepage": "https://github.com/creatorpiyush/mcp-web-agent#readme",
+  "homepage": "https://github.com/creatorpiyush/webmesh-mcp#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/creatorpiyush/mcp-web-agent.git"
+    "url": "https://github.com/creatorpiyush/webmesh-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/creatorpiyush/mcp-web-agent/issues"
+    "url": "https://github.com/creatorpiyush/webmesh-mcp/issues"
   },
   "keywords": [
     "mcp",
@@ -30,7 +30,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "mcp-web-agent": "dist/index.js"
+    "webmesh-mcp": "dist/index.js"
   },
   "files": [
     "dist/",

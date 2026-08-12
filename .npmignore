@@ -4,7 +4,7 @@ src/
 !dist/
 
 # Runtime data (never publish user data)
-.mcp-web-agent/
+.webmesh-mcp/
 .sessions/
 .cache/
 

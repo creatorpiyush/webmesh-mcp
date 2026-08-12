@@ -42,25 +42,25 @@ function setupMockFetch() {
     }
     if (urlStr.includes("test-server.local/blocked-page")) {
       return new Response(
-        `<html><body><h1>Blocked Page</h1><p>You should not see this. This page is intended to test robots.txt disallow rules enforcement across scraping and crawling components in mcp-web-agent.</p></body></html>`,
+        `<html><body><h1>Blocked Page</h1><p>You should not see this. This page is intended to test robots.txt disallow rules enforcement across scraping and crawling components in webmesh-mcp.</p></body></html>`,
         { status: 200, headers: { "Content-Type": "text/html" } }
       );
     }
     if (urlStr.includes("test-server.local/page-a")) {
       return new Response(
-        `<html><head><title>Page A</title></head><body><h1>Welcome to Page A</h1><p>This is the full text content for Page A used in automated test cases for mcp-web-agent BFS crawling and link extraction.</p><a href="http://test-server.local/page-b">Page B</a></body></html>`,
+        `<html><head><title>Page A</title></head><body><h1>Welcome to Page A</h1><p>This is the full text content for Page A used in automated test cases for webmesh-mcp BFS crawling and link extraction.</p><a href="http://test-server.local/page-b">Page B</a></body></html>`,
         { status: 200, headers: { "Content-Type": "text/html" } }
       );
     }
     if (urlStr.includes("test-server.local/page-b")) {
       return new Response(
-        `<html><head><title>Page B</title></head><body><h1>Welcome to Page B</h1><p>This is page B content used in automated test cases for mcp-web-agent BFS crawling and link extraction tools.</p></body></html>`,
+        `<html><head><title>Page B</title></head><body><h1>Welcome to Page B</h1><p>This is page B content used in automated test cases for webmesh-mcp BFS crawling and link extraction tools.</p></body></html>`,
         { status: 200, headers: { "Content-Type": "text/html" } }
       );
     }
     if (urlStr.includes("test-server.local")) {
       return new Response(
-        `<html><head><title>Home Page</title></head><body><h1>Main Heading</h1><p>Welcome to our test server for mcp-web-agent testing. This contains enough text to satisfy the static fetch tier without escalating to Chromium.</p><a href="http://test-server.local/page-a">Page A</a></body></html>`,
+        `<html><head><title>Home Page</title></head><body><h1>Main Heading</h1><p>Welcome to our test server for webmesh-mcp testing. This contains enough text to satisfy the static fetch tier without escalating to Chromium.</p><a href="http://test-server.local/page-a">Page A</a></body></html>`,
         { status: 200, headers: { "Content-Type": "text/html" } }
       );
     }
@@ -93,21 +93,19 @@ async function runTests() {
     `;
     const parser = new SimpleRobotsParser(sampleRobots);
     assert(
-      parser.isAllowed("http://test-server.local/index.html", "mcp-web-agent") === true,
+      parser.isAllowed("http://test-server.local/index.html", "webmesh-mcp") === true,
       "Allowed root path"
     );
     assert(
-      parser.isAllowed("http://test-server.local/private/secret", "mcp-web-agent") === false,
+      parser.isAllowed("http://test-server.local/private/secret", "webmesh-mcp") === false,
       "Disallowed /private/"
     );
     assert(
-      parser.isAllowed(
-        "http://test-server.local/private/public-subfolder/page",
-        "mcp-web-agent"
-      ) === true,
+      parser.isAllowed("http://test-server.local/private/public-subfolder/page", "webmesh-mcp") ===
+        true,
       "Allowed specific subpath"
     );
-    assert(parser.getCrawlDelay("mcp-web-agent") === 2, "Crawl-delay parsed correctly");
+    assert(parser.getCrawlDelay("webmesh-mcp") === 2, "Crawl-delay parsed correctly");
 
     const robotsAllowed = await checkRobots(`${baseUrl}/`);
     assert(robotsAllowed.allowed === true, "Live checkRobots allowed on root");

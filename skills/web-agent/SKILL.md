@@ -3,7 +3,7 @@ name: web-agent
 description: >
   Use this skill when you need to interact with the web: scraping pages, checking
   claims, monitoring for changes, crawling a site, or automating browser interactions
-  (clicks, form fills, sessions). This invokes the mcp-web-agent MCP server tools.
+  (clicks, form fills, sessions). This invokes the webmesh-mcp MCP server tools.
   Trigger keywords: scrape, browse, crawl, web_scrape, web_check, web_diff, web_interact,
   web_crawl, web_crawl_get_page, web_session_close, fetch page, check page, monitor page,
   read website, extract from url, site structure, navigate browser.
@@ -11,7 +11,7 @@ description: >
 
 # Web Agent Skill
 
-This skill gives you access to the **mcp-web-agent** MCP server — a token-economical web
+This skill gives you access to the **webmesh-mcp** MCP server — a token-economical web
 browsing, scraping, and crawling suite. All tools respect `robots.txt` by default.
 
 ## MCP Server Setup
@@ -23,7 +23,7 @@ The server can be registered in your MCP config via npm:
   "mcpServers": {
     "web-agent": {
       "command": "npx",
-      "args": ["mcp-web-agent"]
+      "args": ["webmesh-mcp"]
     }
   }
 }
@@ -35,7 +35,7 @@ Or from source:
   "mcpServers": {
     "web-agent": {
       "command": "npx",
-      "args": ["tsx", "/absolute/path/to/mcp-web-agent/src/index.ts"]
+      "args": ["tsx", "/absolute/path/to/webmesh-mcp/src/index.ts"]
     }
   }
 }

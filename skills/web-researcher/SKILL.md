@@ -3,13 +3,13 @@ name: web-researcher
 description: >
   Use this skill when performing multi-page web research, documentation lookup, or tech stack investigation.
   Teaches the agent how to systematically crawl, select relevant links, and retrieve full cached markdown using
-  mcp-web-agent without overflowing token context.
+  webmesh-mcp without overflowing token context.
   Trigger keywords: research website, investigate docs, read documentation, summarize site, search website, technical research.
 ---
 
 # Web Researcher Skill
 
-This skill guides AI agents on how to conduct deep, structured web research using `mcp-web-agent` tools with minimal token consumption.
+This skill guides AI agents on how to conduct deep, structured web research using `webmesh-mcp` tools with minimal token consumption.
 
 ## Research Workflow Strategy
 

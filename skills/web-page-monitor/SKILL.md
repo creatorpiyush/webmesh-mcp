@@ -8,7 +8,7 @@ description: >
 
 # Web Page Monitor Skill
 
-This skill guides AI agents on auditing websites and monitoring page elements for changes using `mcp-web-agent`.
+This skill guides AI agents on auditing websites and monitoring page elements for changes using `webmesh-mcp`.
 
 ## Recommended Patterns
 

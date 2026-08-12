@@ -16,7 +16,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const { version } = require("../package.json") as { version: string };
 
-const server = new McpServer({ name: "mcp-web-agent", version });
+const server = new McpServer({ name: "webmesh-mcp", version });
 
 // --- Zod schemas (defined once, used for both inputSchema and z.infer) ---
 

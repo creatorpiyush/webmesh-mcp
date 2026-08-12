@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `mcp-web-agent` will be documented in this file.
+All notable changes to `webmesh-mcp` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Atomic disk-backed storage for Playwright `storageState` with 7-day TTL pruning.
 - **SQLite Storage & Caching (`src/cache.ts`)**:
   - Added `crawled_pages` table for cached full page markdown.
-  - Configurable data directory via `MCP_WEB_AGENT_DATA_DIR` env variable (defaults to `.mcp-web-agent/`).
+  - Configurable data directory via `MCP_WEB_AGENT_DATA_DIR` env variable (defaults to `.webmesh-mcp/`).
 - **Shipped Agent Skills (`skills/`)**:
   - `skills/web-agent/SKILL.md`: Core tool reference and decision tree.
   - `skills/web-researcher/SKILL.md`: Multi-page documentation research workflow.

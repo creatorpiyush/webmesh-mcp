@@ -1,4 +1,4 @@
-# mcp-web-agent
+# webmesh-mcp
 
 A token-economical web browsing, scraping, and crawling suite delivered as a
 standard [MCP](https://modelcontextprotocol.io/) server. Any MCP-capable agent
@@ -36,14 +36,14 @@ integration.
 ## Installation
 
 ```bash
-npm install -g mcp-web-agent
+npm install -g webmesh-mcp
 # or use directly with npx (no global install needed):
-npx mcp-web-agent
+npx webmesh-mcp
 ```
 
 ### Chromium (optional — only needed for JS-rendered pages)
 
-`mcp-web-agent` uses [`playwright-core`](https://www.npmjs.com/package/playwright-core)
+`webmesh-mcp` uses [`playwright-core`](https://www.npmjs.com/package/playwright-core)
 and does **not** bundle a browser. You have three options:
 
 **A) Install Playwright's managed Chromium** (simplest):
@@ -69,7 +69,7 @@ Add to your MCP config (e.g. `~/.claude/claude_desktop_config.json`, `.cursor/mc
   "mcpServers": {
     "web-agent": {
       "command": "npx",
-      "args": ["mcp-web-agent"]
+      "args": ["webmesh-mcp"]
     }
   }
 }
@@ -82,7 +82,7 @@ Or, if you prefer to run from source:
   "mcpServers": {
     "web-agent": {
       "command": "npx",
-      "args": ["tsx", "/absolute/path/to/mcp-web-agent/src/index.ts"]
+      "args": ["tsx", "/absolute/path/to/webmesh-mcp/src/index.ts"]
     }
   }
 }
@@ -94,7 +94,7 @@ Or, if you prefer to run from source:
 
 This repository ships with a pre-configured Agent Skill in [`skills/web-agent/SKILL.md`](./skills/web-agent/SKILL.md).
 
-It provides AI coding assistants (Claude Code, Antigravity, Cursor, Windsurf, Gemini CLI, etc.) with a complete decision tree, trigger keywords, and parameter guidance for using `mcp-web-agent` tools token-efficiently.
+It provides AI coding assistants (Claude Code, Antigravity, Cursor, Windsurf, Gemini CLI, etc.) with a complete decision tree, trigger keywords, and parameter guidance for using `webmesh-mcp` tools token-efficiently.
 
 ### How to use the skill in your project
 
@@ -191,7 +191,7 @@ Full markdown for every visited page is cached in SQLite for `web_crawl_get_page
 
 | Variable | Default | Description |
 |---|---|---|
-| `MCP_WEB_AGENT_DATA_DIR` | `<cwd>/.mcp-web-agent` | Root directory for cache DB and session files |
+| `MCP_WEB_AGENT_DATA_DIR` | `<cwd>/.webmesh-mcp` | Root directory for cache DB and session files |
 
 Both the SQLite watch/crawl cache (`cache/watch.sqlite`) and session state files
 (`sessions/`) live under `MCP_WEB_AGENT_DATA_DIR`. Override it to control where
@@ -242,8 +242,8 @@ index.ts (MCP server, stdio transport)
 ## Development
 
 ```bash
-git clone https://github.com/creatorpiyush/mcp-web-agent
-cd mcp-web-agent
+git clone https://github.com/creatorpiyush/webmesh-mcp
+cd webmesh-mcp
 npm install
 npx playwright install chromium    # optional, for browser-tier testing
 
