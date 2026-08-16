@@ -76,8 +76,6 @@ function patternToRegex(pattern: string): RegExp {
 
 function matchesAnyPattern(url: string, patterns?: string[]): boolean {
   if (!patterns || patterns.length === 0) return false;
-  // Test against pathname only so patterns like "/docs/*" work without
-  // having to account for the "https://example.com" prefix.
   let pathname: string;
   try {
     pathname = new URL(url).pathname;
@@ -86,6 +84,10 @@ function matchesAnyPattern(url: string, patterns?: string[]): boolean {
   }
   return patterns.some((p) => {
     try {
+      if (p.endsWith("/*")) {
+        const base = p.slice(0, -2);
+        if (pathname === base) return true;
+      }
       return patternToRegex(p).test(pathname);
     } catch {
       return false;
@@ -100,7 +102,12 @@ export async function crawl(input: CrawlInput): Promise<CrawlOutput> {
   const contentDepth = input.contentDepth ?? "summary";
 
   const startNormalized = normalizeUrl(input.startUrl) ?? input.startUrl;
-  const startHost = new URL(startNormalized).hostname;
+  let startHost: string;
+  try {
+    startHost = new URL(startNormalized).hostname;
+  } catch {
+    throw new Error(`Invalid startUrl provided: "${input.startUrl}"`);
+  }
 
   const queue: { url: string; depth: number; parentUrl: string | null }[] = [
     { url: startNormalized, depth: 0, parentUrl: null },

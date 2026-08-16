@@ -88,6 +88,8 @@ async function runTests() {
       User-agent: *
       Disallow: /private/
       Disallow: /admin
+      Disallow: /api/v1?user=*
+      Disallow: /special[path]
       Allow: /private/public-subfolder
       Crawl-delay: 2
     `;
@@ -105,7 +107,29 @@ async function runTests() {
         true,
       "Allowed specific subpath"
     );
+    assert(
+      parser.isAllowed("http://test-server.local/special[path]", "webmesh-mcp") === false,
+      "Disallowed path with special brackets without syntax error"
+    );
     assert(parser.getCrawlDelay("webmesh-mcp") === 2, "Crawl-delay parsed correctly");
+
+    // --- SSRF Guard IPv6 & Special IP Tests ---
+    banner("SSRF Guard Hardening");
+    let caughtSsf = false;
+    try {
+      await originalAssertPublicUrl("http://[::]/secret");
+    } catch {
+      caughtSsf = true;
+    }
+    assert(caughtSsf === true, "Blocked IPv6 unspecified address [::]");
+
+    caughtSsf = false;
+    try {
+      await originalAssertPublicUrl("http://[::ffff:127.0.0.1]/secret");
+    } catch {
+      caughtSsf = true;
+    }
+    assert(caughtSsf === true, "Blocked IPv4-mapped IPv6 address [::ffff:127.0.0.1]");
 
     const robotsAllowed = await checkRobots(`${baseUrl}/`);
     assert(robotsAllowed.allowed === true, "Live checkRobots allowed on root");
@@ -238,6 +262,7 @@ async function runTests() {
         msg.includes("launch") ||
         msg.includes("ERR_NAME_NOT_RESOLVED") ||
         msg.includes("ERR_INTERNET_DISCONNECTED") ||
+        msg.includes("Blocked:") ||
         msg.includes("net::");
       if (isEnvIssue) {
         console.log(

@@ -69,8 +69,12 @@ export function htmlToCleanMarkdown(html: string, opts?: { selector?: string }):
 
   let root: ReturnType<typeof $> = $("body");
   if (opts?.selector) {
-    const scoped = $(opts.selector);
-    if (scoped.length > 0) root = scoped.first();
+    try {
+      const scoped = $(opts.selector);
+      if (scoped.length > 0) root = scoped.first();
+    } catch {
+      // Fallback to body if selector is invalid
+    }
   } else {
     const main = $("main, article, [role='main']").first();
     if (main.length > 0) root = main;
@@ -96,8 +100,12 @@ export function extractBySchema(
   const $ = cleanedDom(html);
   const out: Record<string, string | null> = {};
   for (const [field, selector] of Object.entries(schema)) {
-    const el = $(selector).first();
-    out[field] = el.length > 0 ? el.text().replace(/\s+/g, " ").trim() : null;
+    try {
+      const el = $(selector).first();
+      out[field] = el.length > 0 ? el.text().replace(/\s+/g, " ").trim() : null;
+    } catch {
+      out[field] = null;
+    }
   }
   return out;
 }
@@ -105,7 +113,15 @@ export function extractBySchema(
 /** Plain, whitespace-normalized text — used internally for assertions/diffing. */
 export function htmlToPlainText(html: string, opts?: { selector?: string }): string {
   const $ = cleanedDom(html);
-  const root = opts?.selector ? $(opts.selector) : $("body");
+  let root: ReturnType<typeof $> = $("body");
+  if (opts?.selector) {
+    try {
+      const scoped = $(opts.selector);
+      if (scoped.length > 0) root = scoped;
+    } catch {
+      // Fallback to body if selector is invalid
+    }
+  }
   return root
     .text()
     .replace(/[ \t]+/g, " ")

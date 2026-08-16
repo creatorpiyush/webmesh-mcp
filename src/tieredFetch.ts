@@ -34,7 +34,6 @@ export async function tieredFetch(
   }
 ): Promise<TieredFetchResult> {
   const timeoutMs = opts?.timeoutMs ?? 15_000;
-  const parsedUrl = new URL(url);
 
   await ssrfGuard.assertPublicUrl(url);
 
@@ -53,23 +52,58 @@ export async function tieredFetch(
 
   if (!opts?.forceBrowser) {
     try {
-      const res = await schedule(parsedUrl.hostname, () =>
-        fetch(url, {
-          headers: { "User-Agent": USER_AGENT },
-          signal: AbortSignal.timeout(timeoutMs),
-        })
-      );
-      const html = await res.text();
-      if (!isThinContent(html)) {
-        return { html, tier: "static", status: res.status, finalUrl: res.url || url };
+      let currentUrl = url;
+      let redirects = 0;
+      let finalRes: Response | null = null;
+
+      while (redirects < 5) {
+        const currentParsed = new URL(currentUrl);
+        await ssrfGuard.assertPublicUrl(currentUrl);
+
+        const res = await schedule(currentParsed.hostname, () =>
+          fetch(currentUrl, {
+            headers: { "User-Agent": USER_AGENT },
+            redirect: "manual",
+            signal: AbortSignal.timeout(timeoutMs),
+          })
+        );
+
+        if (res.status >= 300 && res.status < 400 && res.headers.has("location")) {
+          const loc = res.headers.get("location")!;
+          const nextUrl = new URL(loc, currentUrl).href;
+          await ssrfGuard.assertPublicUrl(nextUrl);
+          currentUrl = nextUrl;
+          redirects++;
+          continue;
+        }
+
+        finalRes = res;
+        break;
+      }
+
+      if (finalRes && (finalRes.ok || finalRes.status < 400)) {
+        const contentLength = parseInt(finalRes.headers.get("content-length") ?? "0", 10);
+        if (contentLength > 10 * 1024 * 1024) {
+          throw new Error("Response body exceeds maximum allowed size (10MB)");
+        }
+
+        const html = await finalRes.text();
+        if (html.length > 10 * 1024 * 1024) {
+          throw new Error("Response body exceeds maximum allowed size (10MB)");
+        }
+
+        if (!isThinContent(html)) {
+          return { html, tier: "static", status: finalRes.status, finalUrl: currentUrl };
+        }
       }
       // else: fall through to browser tier below
-    } catch {
+    } catch (err: any) {
+      if (err?.message?.includes("Blocked:")) throw err;
       // network-level failure on plain fetch — try the browser tier before giving up
     }
   }
 
-  const html = await browserPool.withPage(
+  const { html, finalUrl } = await browserPool.withPage(
     async (page) => {
       await browserPool.goto(page, url, { waitUntil: "domcontentloaded", timeout: timeoutMs });
       if (opts?.waitForSelector) {
@@ -78,10 +112,10 @@ export async function tieredFetch(
         // give client-side rendering a brief moment without an arbitrary long wait
         await page.waitForLoadState("networkidle", { timeout: 3000 }).catch(() => {});
       }
-      return page.content();
+      return { html: await page.content(), finalUrl: page.url() };
     },
     { storageState: opts?.storageState }
   );
 
-  return { html, tier: "browser", finalUrl: url };
+  return { html, tier: "browser", finalUrl };
 }

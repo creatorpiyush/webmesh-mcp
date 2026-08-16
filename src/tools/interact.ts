@@ -1,6 +1,7 @@
 import { browserPool } from "../browserPool.js";
 import { loadSession, saveSession } from "../sessions.js";
 import { checkRobots } from "../hostGate.js";
+import { ssrfGuard } from "../ssrfGuard.js";
 import type { Page, BrowserContextOptions } from "playwright-core";
 
 export type ActionType = "click" | "fill" | "select" | "press" | "waitFor";
@@ -70,6 +71,8 @@ async function runAction(page: Page, action: Action) {
 }
 
 export async function interact(input: InteractInput): Promise<InteractOutput> {
+  await ssrfGuard.assertPublicUrl(input.url);
+
   if (!input.ignoreRobots) {
     const robotsCheck = await checkRobots(input.url);
     if (!robotsCheck.allowed) {
@@ -92,10 +95,25 @@ export async function interact(input: InteractInput): Promise<InteractOutput> {
         await runAction(page, action);
       }
 
-      const scope = input.resultSelector
-        ? page.locator(input.resultSelector)
-        : page.locator("body");
-      const ariaSnapshot = await scope.ariaSnapshot();
+      let ariaSnapshot = "";
+      if (input.resultSelector) {
+        const loc = page.locator(input.resultSelector);
+        if ((await loc.count()) > 0) {
+          ariaSnapshot =
+            (await loc
+              .first()
+              .ariaSnapshot()
+              .catch(() => "")) || "";
+        } else {
+          ariaSnapshot = `[selector "${input.resultSelector}" not found]`;
+        }
+      } else {
+        ariaSnapshot =
+          (await page
+            .locator("body")
+            .ariaSnapshot()
+            .catch(() => "")) || "";
+      }
 
       const out: InteractOutput = {
         ariaSnapshot,
@@ -103,10 +121,15 @@ export async function interact(input: InteractInput): Promise<InteractOutput> {
       };
 
       if (input.screenshot) {
-        const buf = input.resultSelector
-          ? await page.locator(input.resultSelector).screenshot()
-          : await page.screenshot();
-        out.screenshotBase64 = buf.toString("base64");
+        try {
+          const buf =
+            input.resultSelector && (await page.locator(input.resultSelector).count()) > 0
+              ? await page.locator(input.resultSelector).first().screenshot()
+              : await page.screenshot();
+          out.screenshotBase64 = buf.toString("base64");
+        } catch {
+          // Fallback if screenshot fails
+        }
       }
 
       if (input.sessionId) {

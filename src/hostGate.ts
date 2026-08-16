@@ -1,4 +1,5 @@
 import { USER_AGENT } from "./constants.js";
+import { ssrfGuard } from "./ssrfGuard.js";
 
 const ROBOTS_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
@@ -65,14 +66,17 @@ export class SimpleRobotsParser {
 
   isAllowed(urlStr: string, userAgent: string): boolean {
     try {
-      const pathname = new URL(urlStr).pathname;
+      const parsed = new URL(urlStr);
+      const targetPath = parsed.pathname + parsed.search;
       const group = this.findMatchingGroup(userAgent);
       if (!group) return true;
 
       const matchesRule = (rulePath: string) => {
         if (!rulePath) return false;
-        const pattern = rulePath.replace(/\*/g, ".*");
-        return new RegExp("^" + pattern).test(pathname);
+        // Escape special regex characters except '*'
+        const escaped = rulePath.replace(/[.+^${}()|[\]\\?]/g, "\\$&");
+        const pattern = escaped.replace(/\*/g, ".*");
+        return new RegExp("^" + pattern).test(targetPath);
       };
 
       const matchingAllows = group.allow.filter(matchesRule);
@@ -107,6 +111,12 @@ class SimpleHostQueue {
 
   constructor(intervalMs: number) {
     this.intervalMs = intervalMs;
+  }
+
+  updateInterval(intervalMs: number) {
+    if (intervalMs > this.intervalMs) {
+      this.intervalMs = intervalMs;
+    }
   }
 
   add<T>(fn: () => Promise<T>): Promise<T> {
@@ -162,6 +172,7 @@ export async function checkRobots(
     let entry = robotsCache.get(origin);
     if (!entry || Date.now() - entry.fetchedAt > ROBOTS_CACHE_TTL_MS) {
       try {
+        await ssrfGuard.assertPublicUrl(robotsUrl);
         const res = await fetch(robotsUrl, {
           headers: { "User-Agent": USER_AGENT },
           signal: AbortSignal.timeout(5000),
@@ -200,6 +211,8 @@ export async function schedule<T>(
   if (!q) {
     q = new SimpleHostQueue(minInterval);
     hostQueues.set(hostname, q);
+  } else if (crawlDelayMs !== undefined) {
+    q.updateInterval(minInterval);
   }
   return q.add(fn);
 }

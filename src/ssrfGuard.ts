@@ -19,15 +19,31 @@ function isPrivateOrReservedIPv4(ip: string): boolean {
 
 function isPrivateOrReservedIPv6(ip: string): boolean {
   const lower = ip.toLowerCase();
+
+  // Unspecified (0.0.0.0 equivalent) and loopback addresses
+  if (
+    lower === "::" ||
+    lower === "::1" ||
+    lower === "0:0:0:0:0:0:0:0" ||
+    lower === "0:0:0:0:0:0:0:1"
+  ) {
+    return true;
+  }
+
+  // IPv4-mapped IPv6 addresses (e.g. ::ffff:192.168.1.1 or ::ffff:172.16.0.1)
+  const ipv4MappedMatch = lower.match(
+    /(?:^::ffff:|^0:0:0:0:0:ffff:)(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/
+  );
+  if (ipv4MappedMatch && ipv4MappedMatch[1]) {
+    return isPrivateOrReservedIPv4(ipv4MappedMatch[1]);
+  }
+
   return (
-    lower === "::1" || // loopback
     lower.startsWith("fe80") || // link-local
     lower.startsWith("fc") || // unique local
     lower.startsWith("fd") || // unique local
-    lower.startsWith("::ffff:127.") || // IPv4-mapped loopback
-    lower.startsWith("::ffff:10.") ||
-    lower.startsWith("::ffff:192.168.") ||
-    lower.startsWith("::ffff:169.254.")
+    lower.startsWith("fec0") || // site-local
+    lower.startsWith("2001:db8:") // documentation range
   );
 }
 

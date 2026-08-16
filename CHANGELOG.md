@@ -5,6 +5,25 @@ All notable changes to `webmesh-mcp` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-08-16
+
+### Security
+- **Hardened IPv6 SSRF Validation (`src/ssrfGuard.ts`)**: Blocked IPv6 unspecified address (`::`), site-local (`fec0::/10`), documentation (`2001:db8::/32`), and all IPv4-mapped IPv6 address formats (`::ffff:x.x.x.x`).
+- **HTTP Redirect Validation (`src/tieredFetch.ts`)**: Implemented manual redirect validation loops up to 5 hops, checking `ssrfGuard.assertPublicUrl()` on every intermediate `Location` header before following static redirects.
+- **Browser Route Interception (`src/browserPool.ts`)**: Attached route interceptors (`page.route("**/*")`) to block subresource requests or redirects targeting private IP ranges.
+- **SSRF Guard for Robots.txt (`src/hostGate.ts`)**: Added `ssrfGuard.assertPublicUrl()` validation before making `/robots.txt` outbound HTTP requests.
+
+### Fixed
+- **Regex Parsing in `SimpleRobotsParser` (`src/hostGate.ts`)**: Safely escaped special regex characters (including `?`, `.`, `[`, `]`) in `robots.txt` path rules, preventing `SyntaxError` crashes and path matching corruption.
+- **Dynamic Rate Limit Updating (`src/hostGate.ts`)**: Added `updateInterval()` to `SimpleHostQueue` to dynamically update queue intervals when a higher `Crawl-delay` is returned from robots checks.
+- **Browser Pool Crash Recovery (`src/browserPool.ts`)**: Added `isConnected()` health checks in `getBrowser()` to detect process crashes and automatically re-launch Chromium.
+- **Cheerio Invalid Selector Handling (`src/extract.ts`)**: Wrapped DOM selector lookups in try/catch blocks to gracefully handle invalid CSS selectors without crashing.
+- **Crawl Seed URL & Glob Matching (`src/tools/crawl.ts`)**: Safely handled invalid `startUrl` inputs and updated pattern matching logic to match section root paths for glob patterns ending with `/*`.
+- **Browser Tier `finalUrl` Preservation (`src/tieredFetch.ts`)**: Updated browser fetch tier to return `page.url()` so post-navigation URLs are correctly preserved.
+
+### Added
+- **Technical Architecture Specification (`Architecture.md`)**: Created comprehensive architecture and design document with Mermaid data flow diagrams, security model breakdowns, and tool execution lifecycle details.
+
 ## [1.0.1] - 2026-08-12
 
 ### Security
