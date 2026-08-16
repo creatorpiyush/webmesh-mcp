@@ -201,23 +201,23 @@ runtime data is stored.
 
 ## Security
 
-### SSRF protection
+### SSRF Protection
 
-All outbound fetches — static HTTP, browser navigation, and crawl link-following — are validated against a blocklist before any network connection is made. Requests to the following are rejected:
+All outbound fetches — static HTTP, browser navigation, intermediate HTTP redirects, and crawl link-following — are strictly validated against an SSRF blocklist before network connections are established.
 
-- Loopback addresses (`127.x.x.x`, `::1`, `localhost`)
-- Private RFC-1918 ranges (`10.x`, `172.16–31.x`, `192.168.x`)
-- Link-local and cloud metadata addresses (`169.254.x.x`, including the AWS/GCP/Azure instance metadata endpoint)
-- Multicast and reserved ranges (`224.x` and above)
-- Non-HTTP/HTTPS schemes
-
-This matters because `web_crawl` follows links automatically, and scraped page content can contain prompt-injection attempts that try to redirect the next fetch to an internal address. The guard is applied at every fetch entry point so `ignoreRobots: true` does not bypass it.
-
-**DNS rebinding caveat:** The guard resolves hostnames and checks the returned IPs, but the actual TCP connection is made moments later by `fetch`/Playwright using their own DNS resolution. A determined attacker with control of a DNS record could exploit this window. This is the known residual risk; full mitigation requires IP pinning at the HTTP-client level and is a planned follow-up.
+- **Protocol Restriction**: Rejects all non-HTTP/HTTPS schemes.
+- **Loopback Addresses**: `127.x.x.x`, IPv6 `::1`, `localhost`, IPv6 unspecified `::` / `0:0:0:0:0:0:0:0`.
+- **Private RFC-1918 & Unique Local IPv6**: `10.x`, `172.16–31.x`, `192.168.x`, `fc00::/7`, `fd00::/7`.
+- **Link-Local & Cloud Metadata**: `169.254.x.x` (AWS/GCP/Azure IMDS), `fe80::/10`.
+- **Special & Reserved Ranges**: Multicast (`224.x`), Site-Local (`fec0::/10`), Documentation (`2001:db8::/32`), and IPv4-mapped IPv6 formats (`::ffff:x.x.x.x`).
+- **HTTP Redirect Hardening**: Static fetch enforces manual redirect validation loops up to 5 hops, checking `ssrfGuard.assertPublicUrl()` on every intermediate `Location` header before following.
+- **Browser Route Interception**: Chromium contexts attach route interceptors (`page.route("**/*")`) to block subresource requests or redirects targeting private IP space.
 
 ---
 
 ## Architecture
+
+For a detailed technical architecture and end-to-end data flow specification, see [`Architecture.md`](./Architecture.md).
 
 ```
 index.ts (MCP server, stdio transport)
@@ -227,11 +227,11 @@ index.ts (MCP server, stdio transport)
 ├── tools/interact.ts      — web_interact
 ├── tools/crawl.ts         — web_crawl
 ├── tools/crawlGetPage.ts  — web_crawl_get_page
-├── tieredFetch.ts         — static HTTP → browser escalation
-├── browserPool.ts         — singleton Chromium process (playwright-core)
-├── ssrfGuard.ts           — SSRF protection (blocks private/reserved addresses)
+├── tieredFetch.ts         — static HTTP → browser escalation (manual redirect validation)
+├── browserPool.ts         — singleton Chromium process + route interceptor (playwright-core)
+├── ssrfGuard.ts           — SSRF protection (blocks private/reserved IPv4 & IPv6 addresses)
 ├── extract.ts             — HTML → clean markdown / plain text / schema JSON
-├── hostGate.ts            — robots.txt parser + per-host rate-limiting queue
+├── hostGate.ts            — robots.txt parser (regex escaped) + per-host rate-limiting queue
 ├── sessions.ts            — disk-backed storageState persistence
 ├── cache.ts               — SQLite: watch hashes + crawled page markdown
 └── constants.ts           — shared USER_AGENT, DATA_DIR

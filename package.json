@@ -1,6 +1,6 @@
 {
   "name": "webmesh-mcp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Token-economical web browsing, scraping, and crawling MCP server. Tiered fetching (static → browser), robots.txt compliance, session persistence, and BFS crawling.",
   "author": "Piyush Anand",
   "license": "MIT",

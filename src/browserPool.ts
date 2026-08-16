@@ -48,7 +48,9 @@ class BrowserPool {
   }
 
   private async getBrowser(): Promise<Browser> {
-    if (this.browser) return this.browser;
+    if (this.browser && this.browser.isConnected()) return this.browser;
+    this.browser = null;
+
     if (!this.launching) {
       this.launching = chromium
         .launch({
@@ -66,6 +68,7 @@ class BrowserPool {
         });
     }
     this.browser = await this.launching;
+    this.launching = null;
     return this.browser;
   }
 
@@ -85,9 +88,22 @@ class BrowserPool {
     const ctx = await this.newContext(options);
     try {
       const page = await ctx.newPage();
+      await page.route("**/*", async (route) => {
+        const reqUrl = route.request().url();
+        if (reqUrl.startsWith("http://") || reqUrl.startsWith("https://")) {
+          try {
+            await ssrfGuard.assertPublicUrl(reqUrl);
+            await route.continue();
+          } catch {
+            await route.abort("blockedbyclient");
+          }
+        } else {
+          await route.continue();
+        }
+      });
       return await fn(page, ctx);
     } finally {
-      await ctx.close(); // closes context+page; browser process stays warm
+      await ctx.close().catch(() => {}); // closes context+page; browser process stays warm
     }
   }
 
@@ -98,8 +114,9 @@ class BrowserPool {
   }
 
   async shutdown() {
+    this.launching = null;
     if (this.browser) {
-      await this.browser.close();
+      await this.browser.close().catch(() => {});
       this.browser = null;
     }
   }
